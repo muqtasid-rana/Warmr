@@ -569,6 +569,7 @@ function App() {
                                   {Icons.linkedin}
                                 </a>
                               )}
+                              {/* //jj */}
                               {action.type === 'warming' && (
                                 <button
                                   className="action-btn complete"
