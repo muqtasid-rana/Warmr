@@ -1,0 +1,280 @@
+/* ============================================
+   WARMR — Login Page Styles
+   ============================================ */
+
+/* --- Full-page login wrapper --- */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, #0A0A0A 0%, #111111 40%, #1a1510 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- Decorative background circles (pure CSS, no backdrop-filter) --- */
+.login-page::before,
+.login-page::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.login-page::before {
+    width: 500px;
+    height: 500px;
+    top: -120px;
+    right: -100px;
+    background: radial-gradient(circle, rgba(245, 190, 11, 0.08) 0%, transparent 70%);
+}
+
+.login-page::after {
+    width: 600px;
+    height: 600px;
+    bottom: -200px;
+    left: -150px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+}
+
+/* Third decorative circle via the inner wrapper */
+.login-bg-circle {
+    position: absolute;
+    width: 350px;
+    height: 350px;
+    top: 50%;
+    left: 15%;
+    transform: translateY(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* --- Login card container --- */
+.login-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 40px 36px 36px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow:
+        0 0 80px rgba(245, 190, 11, 0.12),
+        0 0 160px rgba(245, 158, 11, 0.06),
+        0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: cardFadeIn 0.5s ease forwards;
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- Logo / brand --- */
+.login-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.login-brand svg {
+    width: 28px;
+    height: 28px;
+    color: var(--accent-cyan);
+}
+
+.login-brand-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 28px;
+}
+
+/* --- Login form --- */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.login-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.login-form .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.login-form .form-input {
+    padding: 11px 14px;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.25s ease;
+}
+
+.login-form .form-input::placeholder {
+    color: var(--text-muted);
+}
+
+.login-form .form-input:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px var(--accent-cyan-dim);
+}
+
+/* --- Primary submit button --- */
+.login-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--accent-cyan);
+    color: #0A0A0A;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 4px;
+}
+
+.login-btn:hover:not(:disabled) {
+    background: #22d3ee;
+    box-shadow: 0 0 24px rgba(6, 182, 212, 0.3);
+    transform: translateY(-1px);
+}
+
+.login-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --- Divider --- */
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 4px 0;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.login-divider span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* --- Google button --- */
+.login-google-btn {
+    width: 100%;
+    padding: 11px 20px;
+    background: var(--bg-card-alt);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.login-google-btn:hover:not(:disabled) {
+    background: var(--bg-elevated);
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+}
+
+.login-google-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.login-google-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* --- Error message --- */
+.login-error {
+    background: var(--accent-rose-dim);
+    color: var(--accent-rose);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    text-align: center;
+}
+
+/* --- Toggle link --- */
+.login-toggle {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.825rem;
+    color: var(--text-muted);
+}
+
+.login-toggle button {
+    background: none;
+    border: none;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-size: 0.825rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    transition: color 0.2s ease;
+}
+
+.login-toggle button:hover {
+    color: #22d3ee;
+    text-decoration: underline;
+}
+
+/* --- Responsive --- */
+@media (max-width: 480px) {
+    .login-card {
+        margin: 16px;
+        padding: 32px 24px 28px;
+    }
+}

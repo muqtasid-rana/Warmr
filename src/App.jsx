@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { auth } from './firebase'
+import Login from './Login'
 import './App.css'
 import {
   subscribeToProspects,
@@ -274,6 +277,7 @@ const EMPTY_FORM = {
 // ██  APP COMPONENT
 // ══════════════════════════════════════════════════════════════
 function App() {
+  const [user, setUser] = useState(undefined) // undefined = loading, null = signed out
   const [activeTab, setActiveTab] = useState('Pipeline')
   const [prospects, setProspects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -284,15 +288,24 @@ function App() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
 
-  // ── Firebase subscription ────────────────────────────────
+  // ── Auth state listener ──────────────────────────────────
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
+    })
+    return () => unsub()
+  }, [])
+
+  // ── Firebase subscription (only when authenticated) ──────
+  useEffect(() => {
+    if (!user) return
     seedIfEmpty().catch(console.error)
     const unsub = subscribeToProspects((data) => {
       setProspects(data)
       setLoading(false)
     })
     return () => unsub()
-  }, [])
+  }, [user])
 
   // ── Derived stats ────────────────────────────────────────
   const stats = useMemo(() => {
@@ -449,6 +462,19 @@ function App() {
   // ══════════════════════════════════════════════════════════
   // ██  RENDER
   // ══════════════════════════════════════════════════════════
+  // ── Auth guards ──────────────────────────────────────────
+  if (user === undefined) {
+    return (
+      <div className="loading-state" style={{ minHeight: '100vh', justifyContent: 'center' }}>
+        <div className="spinner" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Login />
+  }
+
   return (
     <>
       {/* ─── TOP NAV ─── */}
@@ -471,6 +497,9 @@ function App() {
             Content Hub
           </button>
         </div>
+        <button className="btn-logout" onClick={() => signOut(auth)}>
+          Sign Out
+        </button>
       </nav>
 
       {/* ─── MAIN CONTENT ─── */}

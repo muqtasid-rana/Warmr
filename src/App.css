@@ -19,6 +19,24 @@
   box-shadow: var(--shadow-md);
 }
 
+.btn-logout {
+  padding: 7px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-logout:hover {
+  background: var(--accent-rose-dim);
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
 .nav-logo {
   font-size: 1.5rem;
   font-weight: 800;
