@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './firebase'
 import Login from './Login'
+import * as XLSX from 'xlsx'
 import './App.css'
 import {
   subscribeToProspects,
   addProspect as fbAddProspect,
   updateProspect as fbUpdateProspect,
   deleteProspect as fbDeleteProspect,
-  seedIfEmpty,
+  bulkAddProspects,
 } from './prospectService'
 
 // ── Status list ──────────────────────────────────────────────
@@ -287,6 +288,9 @@ function App() {
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [importPreview, setImportPreview] = useState(null) // { rows: [...], fileName: '' }
+  const [importLoading, setImportLoading] = useState(false)
+  const fileInputRef = useRef(null)
 
   // ── Auth state listener ──────────────────────────────────
   useEffect(() => {
@@ -299,7 +303,6 @@ function App() {
   // ── Firebase subscription (only when authenticated) ──────
   useEffect(() => {
     if (!user) return
-    seedIfEmpty().catch(console.error)
     const unsub = subscribeToProspects((data) => {
       setProspects(data)
       setLoading(false)
@@ -459,6 +462,73 @@ function App() {
     }
   }
 
+  // ── Excel import handlers ────────────────────────────────
+  function handleFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const workbook = XLSX.read(evt.target.result, { type: 'array' })
+        const sheetName = workbook.SheetNames[0]
+        const sheet = workbook.Sheets[sheetName]
+        const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+
+        // Normalize column names (flexible matching via includes)
+        const rows = rawRows.map(raw => {
+          const mapped = {}
+          Object.entries(raw).forEach(([key, val]) => {
+            const k = key.trim().toLowerCase()
+            const v = String(val).trim()
+            if (!v) return // skip empty values
+
+            if (!mapped.name && (k === 'name' || k.includes('full name') || k === 'fullname' || k === 'prospect')) {
+              mapped.name = v
+            } else if (!mapped.linkedin && (k.includes('linkedin'))) {
+              mapped.linkedin = v
+            } else if (!mapped.website && (k.includes('website') || k.includes('site') || k === 'url' || k === 'link')) {
+              mapped.website = v
+            } else if (!mapped.followers && (k.includes('follower') || k === 'audience')) {
+              mapped.followers = v
+            } else if (!mapped.niche && (k.includes('niche') || k.includes('category') || k.includes('industry'))) {
+              mapped.niche = v
+            } else if (!mapped.notes && (k.includes('note') || k.includes('comment') || k.includes('description') || k.includes('remark'))) {
+              mapped.notes = v
+            }
+          })
+          return mapped
+        }).filter(r => r.name) // Only keep rows with a name
+
+        if (rows.length === 0) {
+          alert('No valid rows found. Make sure your spreadsheet has a "Name" column.')
+          return
+        }
+
+        setImportPreview({ rows, fileName: file.name })
+      } catch {
+        alert('Could not read the file. Please make sure it is a valid .xlsx, .xls, or .csv file.')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+    // Reset so the same file can be re-selected
+    e.target.value = ''
+  }
+
+  async function handleImportConfirm() {
+    if (!importPreview) return
+    setImportLoading(true)
+    try {
+      await bulkAddProspects(importPreview.rows)
+      setImportPreview(null)
+    } catch (err) {
+      console.error('Import failed:', err)
+      alert('Import failed. Please try again.')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   // ══════════════════════════════════════════════════════════
   // ██  RENDER
   // ══════════════════════════════════════════════════════════
@@ -516,10 +586,23 @@ function App() {
                 {/* ── Section Header ── */}
                 <div className="section-header">
                   <h1 className="section-title">Pipeline</h1>
-                  <button className="btn-add-prospect" onClick={openAddPanel}>
-                    {Icons.plus}
-                    Add Prospect
-                  </button>
+                  <div className="section-header-actions">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept=".xlsx,.xls,.csv"
+                      style={{ display: 'none' }}
+                    />
+                    <button className="btn-import" onClick={() => fileInputRef.current?.click()}>
+                      {Icons.inbox}
+                      Import Excel
+                    </button>
+                    <button className="btn-add-prospect" onClick={openAddPanel}>
+                      {Icons.plus}
+                      Add Prospect
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Stats Bar ── */}
@@ -884,6 +967,63 @@ function App() {
               <button className="btn-cancel" onClick={closePanel}>Cancel</button>
               <button className="btn-save" onClick={handleSave}>
                 {editingId ? 'Update Prospect' : 'Save Prospect'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ─── IMPORT PREVIEW MODAL ─── */}
+      {importPreview && (
+        <>
+          <div className="panel-overlay" onClick={() => !importLoading && setImportPreview(null)} />
+          <div className="import-modal">
+            <div className="import-modal-header">
+              <div>
+                <span className="import-modal-title">Import Preview</span>
+                <span className="import-modal-file">{importPreview.fileName}</span>
+              </div>
+              <button className="panel-close" onClick={() => !importLoading && setImportPreview(null)}>
+                {Icons.x}
+              </button>
+            </div>
+            <div className="import-modal-body">
+              <div className="import-modal-count">
+                {importPreview.rows.length} prospect{importPreview.rows.length !== 1 ? 's' : ''} found
+              </div>
+              <div className="import-table-wrapper">
+                <table className="import-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>LinkedIn</th>
+                      <th>Followers</th>
+                      <th>Niche</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreview.rows.map((row, i) => (
+                      <tr key={i}>
+                        <td className="import-row-num">{i + 1}</td>
+                        <td>{row.name}</td>
+                        <td className="import-cell-url">{row.linkedin ? '✓' : '—'}</td>
+                        <td>{row.followers || '—'}</td>
+                        <td>{row.niche || '—'}</td>
+                        <td className="import-cell-notes">{row.notes || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="import-modal-footer">
+              <button className="btn-cancel" onClick={() => setImportPreview(null)} disabled={importLoading}>
+                Cancel
+              </button>
+              <button className="btn-save" onClick={handleImportConfirm} disabled={importLoading}>
+                {importLoading ? 'Importing…' : `Import ${importPreview.rows.length} Prospects`}
               </button>
             </div>
           </div>

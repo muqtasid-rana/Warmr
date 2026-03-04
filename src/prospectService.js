@@ -71,6 +71,37 @@ export async function deleteProspect(id) {
     return deleteDoc(ref)
 }
 
+// ── Bulk add prospects (from Excel import) ──────────────────
+export async function bulkAddProspects(rows) {
+    const now = new Date().toISOString()
+    const today = todayStr()
+    const batch = writeBatch(db)
+
+    rows.forEach((row) => {
+        const ref = doc(prospectsRef)
+        batch.set(ref, {
+            name: row.name || '',
+            linkedin: row.linkedin || '',
+            website: row.website || '',
+            followers: row.followers || '',
+            niche: row.niche || 'Business Coach',
+            notes: row.notes || '',
+            status: 'Warming',
+            addedAt: now,
+            createdAt: now,
+            warmingDaysCompleted: 0,
+            currentActionDueDate: today,
+            dmSentAt: null,
+            noReplyAt: null,
+            followUpsDone: 0,
+            lastFollowUpAt: null,
+        })
+    })
+
+    await batch.commit()
+    return rows.length
+}
+
 // ── Seed initial data (one-time) ────────────────────────────
 // Call this once to populate the database with the 8 default prospects.
 // After seeding, the function won't re-seed if prospects already exist.
